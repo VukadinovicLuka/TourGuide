@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Destination</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+        }
+        header .user-info {
+            display: flex;
+            align-items: center;
+        }
+        header .user-info span {
+            margin-right: 20px;
+        }
+        header .logout-btn {
+            background-color: white;
+            color: #007bff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        header .logout-btn:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+        nav {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        nav li {
+            margin: 0 15px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        form div {
+            margin-bottom: 15px;
+        }
+        form label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        form input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Travel Guide</h1>
+    <div class="user-info">
+        <span id="user-name"></span>
+        <button class="logout-btn" id="log-out-btn">Log out</button>
+    </div>
+</header>
+
+<nav>
+    <ul id="admin-nav" class="nav-links" style="display: none;">
+        <li><a href="destination.html">Destinations</a></li>
+        <li><a href="user.html">Users</a></li>
+        <li><a href="articles.html">Articles</a></li>
+    </ul>
+    <ul id="user-nav" class="nav-links" style="display: none;">
+        <li><a href="destination.html">Destinations</a></li>
+        <li><a href="articles.html">Articles</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <h2>Add New Destination</h2>
+    <form id="add-destination-form">
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div>
+            <label for="description">Description:</label>
+            <input type="text" id="description" name="description" required>
+        </div>
+        <button type="submit">Add destination</button>
+    </form>
+</div>
+
+<script>
+    window.onload = function() {
+        const role = localStorage.getItem('role');
+        const email = localStorage.getItem('email');
+
+        fetchUserInfo(email);
+
+        if (role === 'admin') {
+            document.getElementById('admin-nav').style.display = 'flex';
+        } else if (role === 'user') {
+            document.getElementById('user-nav').style.display = 'flex';
+        } else {
+            alert('Unauthorized access');
+            window.location.href = 'index.html';
+        }
+
+        document.getElementById('log-out-btn').addEventListener('click', function(){
+            localStorage.removeItem('jwtToken');
+            window.location.href = 'index.html';
+        });
+    };
+
+    function fetchUserInfo(email) {
+        fetch(`/api/users/email/${email}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => response.json())
+            .then(user => {
+                document.getElementById('user-name').innerText = `${user.name} ${user.lastname}`;
+                document.getElementById('log-out-btn').style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    document.getElementById('add-destination-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const destination = {
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+        };
+
+        // First check if the destination with the same name already exists
+        fetch(`/api/destinations/name/${encodeURIComponent(destination.name)}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    alert('A destination with this name already exists.');
+                    throw new Error('A destination with this name already exists.');
+                } else if (response.status === 404) {
+                    // Destination does not exist, proceed to add
+                    return fetch('/api/destinations', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                        },
+                        body: JSON.stringify(destination)
+                    });
+                } else {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to check destination existence');
+                    });
+                }
+            })
+            .then(response => {
+                if (response && response.ok) {
+                    alert('Destination added successfully');
+                    window.location.href = 'destination.html';
+                } else if (response) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Failed to add destination');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+    });
+</script>
+
+</body>
+</html>

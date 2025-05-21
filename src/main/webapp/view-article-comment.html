@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Article</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .article-container {
+            background-color: #fff;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .article-metadata {
+            margin-bottom: 20px;
+            color: #777;
+            font-size: 14px;
+        }
+        .article-metadata p {
+            margin: 5px 0;
+        }
+        .article-content {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #444;
+        }
+        .comments-section {
+            margin-top: 40px;
+        }
+        .comments-section h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .comment {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .comment p {
+            margin: 5px 0;
+        }
+        .comment-author {
+            font-weight: bold;
+            color: #333;
+        }
+        .comment-date {
+            font-size: 12px;
+            color: #777;
+        }
+        .comment-form {
+            margin-top: 20px;
+        }
+        .comment-form input, .comment-form textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+        .comment-form button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .comment-form button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="article-container">
+    <h1 id="article-title">Loading...</h1>
+    <div class="article-metadata">
+        <p id="article-author">Author: Loading...</p>
+        <p id="article-date">Date: Loading...</p>
+    </div>
+    <div class="article-content" id="article-content">Loading content...</div>
+
+    <div class="comments-section">
+        <h2>Comments</h2>
+        <div id="comments-container">
+            <!-- Comments will be dynamically added here -->
+        </div>
+    </div>
+
+    <div class="comment-form">
+        <h3>Add a Comment</h3>
+        <input type="text" id="comment-author" placeholder="Your name" />
+        <textarea id="comment-text" placeholder="Your comment here..." rows="4"></textarea>
+        <button onclick="addComment()">Submit</button>
+    </div>
+</div>
+
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const articleId = params.get('id');
+
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchArticleDetails(articleId);
+        fetchComments(articleId);
+    });
+
+    function fetchArticleDetails(id) {
+        fetch(`/api/articles/article/${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch article');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('article-title').innerText = data.title;
+                document.getElementById('article-author').innerText = 'Author: ' + data.authorEmail;
+                document.getElementById('article-date').innerText = 'Date: ' + new Date(data.createdAt).toLocaleDateString();
+                document.getElementById('article-content').innerText = data.text;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to load article details');
+            });
+    }
+
+    function fetchComments(articleId) {
+        fetch(`/api/comments/article/${articleId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch comments');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const commentsContainer = document.getElementById('comments-container');
+                commentsContainer.innerHTML = '';
+
+                data.forEach(comment => {
+                    const commentElement = document.createElement('div');
+                    commentElement.className = 'comment';
+                    commentElement.innerHTML = `
+                        <p class="comment-author">${comment.author_name}</p>
+                        <p>${comment.text}</p>
+                        <p class="comment-date">${new Date(comment.created_at).toLocaleString()}</p>
+                    `;
+                    commentsContainer.appendChild(commentElement);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+
+    function addComment() {
+        const commentAuthor = document.getElementById('comment-author').value;
+        const commentText = document.getElementById('comment-text').value;
+
+        if (!commentAuthor || !commentText) {
+            alert('Name and comment cannot be empty');
+            return;
+        }
+
+        fetch(`/api/comments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                article_id: articleId,
+                author_name: commentAuthor,
+                text: commentText,
+                created_at: new Date().toISOString()
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to add comment');
+                }
+                return response.json();
+            })
+            .then(() => {
+                document.getElementById('comment-author').value = '';
+                document.getElementById('comment-text').value = '';
+                fetchComments(articleId); // Refresh comments
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to add comment');
+            });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Destinations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+        }
+        header .user-info {
+            display: flex;
+            align-items: center;
+        }
+        header .user-info span {
+            margin-right: 20px;
+        }
+        header .logout-btn {
+            background-color: white;
+            color: #007bff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        header .logout-btn:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+        nav {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        nav li {
+            margin: 0 15px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        td {
+            background-color: #f9f9f9;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+        #add-destination-btn {
+            background-color: #007bff;
+            color: white;
+            margin-bottom: 20px;
+        }
+        #log-out-btn {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Travel Guide</h1>
+    <div class="user-info">
+        <span id="user-name"></span>
+        <button class="logout-btn" id="log-out-btn">Log out</button>
+    </div>
+</header>
+
+<nav>
+    <ul id="admin-nav" class="nav-links" style="display: none;">
+        <li><a href="destination.html">Destinations</a></li>
+        <li><a href="user.html">Users</a></li>
+        <li><a href="articles.html">Articles</a></li>
+    </ul>
+    <ul id="user-nav" class="nav-links" style="display: none;">
+        <li><a href="destination.html">Destinations</a></li>
+        <li><a href="articles.html">Articles</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <h2>Existing Destinations</h2>
+    <button id="add-destination-btn">Add New Destination</button>
+    <table id="destinations-table">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Destinations will be dynamically added here -->
+        </tbody>
+    </table>
+    <div id="pagination"></div>
+</div>
+
+<script>
+    const destinationsPerPage = 10;
+    let currentPage = 1;
+    let totalPages = 1;
+
+    window.onload = function() {
+        const role = localStorage.getItem('role');
+        const email = localStorage.getItem('email');
+
+        fetchUserInfo(email);
+
+        if (role === 'admin') {
+            document.getElementById('admin-nav').style.display = 'flex';
+        } else if (role === 'user') {
+            document.getElementById('user-nav').style.display = 'flex';
+        } else {
+            alert('Unauthorized access');
+            window.location.href = 'index.html';
+        }
+
+        loadDestinations(currentPage, destinationsPerPage);
+
+        document.getElementById('add-destination-btn').addEventListener('click', function() {
+            window.location.href = 'newDestination.html';
+        });
+
+        document.getElementById('log-out-btn').addEventListener('click', function(){
+            localStorage.removeItem('jwtToken');
+            window.location.href = 'index.html';
+        });
+    };
+
+    function fetchUserInfo(email) {
+        fetch(`/api/users/email/${email}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => response.json())
+            .then(user => {
+                document.getElementById('user-name').innerText = `${user.name} ${user.lastname}`;
+                document.getElementById('log-out-btn').style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function loadDestinations(page, size) {
+        fetch(`/api/destinations/pagination?page=${page}&size=${size}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                const destinations = data.destinations;
+                const totalDestinations = data.total;
+                totalPages = Math.ceil(totalDestinations / destinationsPerPage);
+                displayDestinations(destinations);
+                setupPagination();
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function displayDestinations(destinations) {
+        const destinationsTableBody = document.getElementById('destinations-table').getElementsByTagName('tbody')[0];
+        destinationsTableBody.innerHTML = '';
+        destinations.forEach(destination => {
+            const row = destinationsTableBody.insertRow();
+            const nameCell = row.insertCell(0);
+            nameCell.innerHTML = `<a href="article.html?id=${destination.id}">${destination.name}</a>`;
+            row.insertCell(1).innerText = destination.description;
+            const actionsCell = row.insertCell(2);
+            createActions(actionsCell, destination, row);
+        });
+    }
+
+    function setupPagination() {
+        const paginationContainer = document.getElementById('pagination');
+        paginationContainer.innerHTML = '';
+
+        for (let i = 1; i <= totalPages; i++) {
+            const button = document.createElement('button');
+            button.innerText = i;
+            button.className = i === currentPage ? 'active' : '';
+            button.onclick = function() {
+                currentPage = i;
+                loadDestinations(currentPage, destinationsPerPage);
+            };
+            paginationContainer.appendChild(button);
+        }
+
+        const prevButton = document.createElement('button');
+        prevButton.innerText = 'Previous';
+        prevButton.disabled = currentPage === 1;
+        prevButton.onclick = function() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadDestinations(currentPage, destinationsPerPage);
+            }
+        };
+        paginationContainer.insertBefore(prevButton, paginationContainer.firstChild);
+
+        const nextButton = document.createElement('button');
+        nextButton.innerText = 'Next';
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.onclick = function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadDestinations(currentPage, destinationsPerPage);
+            }
+        };
+        paginationContainer.appendChild(nextButton);
+    }
+
+    function createActions(actionsCell, destination, row) {
+        const deleteButton = document.createElement('button');
+        deleteButton.innerText = 'Delete';
+        deleteButton.onclick = function() {
+            deleteDestination(destination.id, row);
+        };
+        actionsCell.appendChild(deleteButton);
+
+        const editButton = document.createElement('button');
+        editButton.innerText = 'Edit';
+        editButton.onclick = function() {
+            window.location.href = `edit-destination.html?id=${destination.id}`;
+        };
+        actionsCell.appendChild(editButton);
+    }
+
+    function deleteDestination(id, row) {
+        if (!confirm('Are you sure you want to delete this destination?')) {
+            return;
+        }
+
+        // Prvo proveri da li postoje članci za ovu destinaciju
+        fetch(`/api/articles/${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => response.json().catch(() => {
+                // Ako odgovor nije validan JSON, tretiraj ga kao grešku
+                throw new Error('Invalid JSON response');
+            }))
+            .then(articles => {
+                if (articles.length > 0) {
+                    alert('Cannot delete destination with existing articles');
+                } else {
+                    // Proveri i obriši aktivnosti pre brisanja destinacije
+                    fetch(`/api/activity/destination/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                        }
+                    })
+                        .then(response => {
+                            // Treat as successful if response status is 204 (No Content)
+                            if (response.ok || response.status === 204) {
+                                // Ako nema članaka i aktivnosti su obrisane, onda dozvoli brisanje destinacije
+                                fetch(`/api/destinations/${id}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                                    }
+                                })
+                                    .then(response => {
+                                        if (response.ok) {
+                                            row.remove();
+                                            alert('Destination deleted successfully');
+                                        } else {
+                                            alert('Failed to delete the destination');
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('Error deleting destination');
+                                    });
+                            } else {
+                                alert('Failed to delete activities for the destination');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error deleting activities for the destination');
+                        });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error fetching articles for destination');
+            });
+    }
+</script>
+</body>
+</html>
+
+</script>
+
+</body>
+</html>

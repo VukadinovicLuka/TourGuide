@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Article</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+        }
+        header .user-info {
+            display: flex;
+            align-items: center;
+        }
+        header .user-info span {
+            margin-right: 20px;
+        }
+        header .logout-btn {
+            background-color: white;
+            color: #007bff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        header .logout-btn:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+        nav {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        nav li {
+            margin: 0 15px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        form div {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button[disabled] {
+            background-color: #ccc;
+        }
+        button:hover:not([disabled]) {
+            background-color: #218838;
+        }
+        .activity-item {
+            margin-top: 5px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .activity-list {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Travel Guide</h1>
+    <div class="user-info">
+        <span id="user-name"></span>
+        <button class="logout-btn" id="log-out-btn">Log out</button>
+    </div>
+</header>
+
+<nav>
+    <ul id="admin-nav" class="nav-links" style="display: none;">
+        <li><a href="destination.html">Destinations</a></li>
+        <li><a href="user.html">Users</a></li>
+        <li><a href="articles.html">Articles</a></li>
+    </ul>
+    <ul id="user-nav" class="nav-links" style="display: none;">
+        <li><a href="destination.html">Destinations</a></li>
+        <li><a href="articles.html">Articles</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <h2>Edit Article</h2>
+    <form id="edit-article-form">
+        <div>
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" required>
+        </div>
+        <div>
+            <label for="content">Content:</label>
+            <input type="text" id="content" name="content" required>
+        </div>
+        <div>
+            <label for="activities-list">Activities:</label>
+            <div id="activities-list" class="activity-list">
+                <!-- Activities will be dynamically added here -->
+            </div>
+            <button type="button" id="edit-activity-btn">Edit Activities</button>
+        </div>
+        <button type="submit">Save Changes</button>
+    </form>
+</div>
+
+<script>
+    let articleId;
+    let destinationId;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        articleId = urlParams.get('id');
+        const role = localStorage.getItem('role');
+
+        if (!articleId) {
+            alert('Article ID is missing from the URL.');
+            return;
+        }
+
+        if (role === 'admin') {
+            document.getElementById('admin-nav').style.display = 'flex';
+        } else if (role === 'user') {
+            document.getElementById('user-nav').style.display = 'flex';
+        } else {
+            alert('Unauthorized access');
+            window.location.href = 'index.html';
+        }
+
+        fetchArticleDetails(articleId);
+        document.getElementById('edit-article-form').addEventListener('submit', handleEditSubmit);
+
+        document.getElementById('log-out-btn').addEventListener('click', function() {
+            localStorage.removeItem('jwtToken');
+            window.location.href = 'index.html';
+        });
+
+        document.getElementById('edit-activity-btn').addEventListener('click', function() {
+            window.location.href = `edit-activity.html?id=${articleId}`;
+        });
+
+        fetchUserInfo(localStorage.getItem('email'));
+    });
+
+    function fetchUserInfo(email) {
+        fetch(`/api/users/email/${email}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => response.json())
+            .then(user => {
+                document.getElementById('user-name').innerText = `${user.name} ${user.lastname}`;
+                document.getElementById('log-out-btn').style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function fetchArticleDetails(id) {
+        fetch(`/api/articles/article/${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch article');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Article data:', data);
+                document.getElementById('title').value = data.title;
+                document.getElementById('content').value = data.text;
+                destinationId = data.destinationId;
+                loadActivities(id);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to load article details');
+            });
+    }
+
+    function loadActivities(articleId) {
+        fetch(`/api/article_activities/activity/${articleId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch activity IDs');
+                }
+                return response.json();
+            })
+            .then(activityIds => {
+                if (activityIds.length === 0) {
+                    const activitiesList = document.getElementById('activities-list');
+                    const div = document.createElement('div');
+                    div.innerText = "No activities available";
+                    activitiesList.appendChild(div);
+                    return;
+                }
+
+                // Fetch details for all activity IDs
+                const requests = activityIds.map(id =>
+                    fetch(`/api/activity/name/${id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to fetch activity details for ID: ' + id);
+                            }
+                            return response.json();
+                        })
+                );
+
+                return Promise.all(requests);
+            })
+            .then(activityDetails => {
+                const activitiesList = document.getElementById('activities-list');
+                activitiesList.innerHTML = ''; // Clear existing activities
+
+                activityDetails.forEach(activity => {
+                    console.log(activity.name);
+                    if (activity.name) {
+                        const div = document.createElement('div');
+                        div.className = 'activity-item';
+                        div.innerText = activity.name;
+                        activitiesList.appendChild(div);
+                    } else {
+                        console.error('Activity name is missing for activity:', activity);
+                    }
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function handleEditSubmit(event) {
+        event.preventDefault();
+
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+
+        const articleData = {
+            id: articleId,
+            title: title,
+            text: content,
+        };
+
+        fetch(`/api/articles/${articleId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            },
+            body: JSON.stringify(articleData)
+        })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Article updated successfully');
+                    window.location.href = `article.html?id=${destinationId}`;
+                } else {
+                    return response.text().then(text => {
+                        console.error('Response text:', text);
+                        throw new Error(text || 'Failed to update article');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+    }
+
+</script>
+
+</body>
+</html>

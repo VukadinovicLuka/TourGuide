@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top 10 Articles</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        .articles-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .article-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            width: 300px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            background-color: #fff;
+        }
+        .article-card h2 {
+            font-size: 20px;
+            margin: 0 0 10px;
+            color: #007bff;
+        }
+        .article-card h2 a {
+            text-decoration: none;
+            color: inherit;
+        }
+        .article-card h2 a:hover {
+            text-decoration: underline;
+        }
+        .article-card p {
+            margin: 10px 0;
+            color: #555;
+        }
+        .article-card .meta {
+            color: #999;
+            font-size: 14px;
+        }
+        .article-card .destination {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #007bff;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="articles-container" id="articles-container">
+    <!-- Articles will be dynamically added here -->
+</div>
+
+<script>
+    window.onload = function() {
+        loadTopArticles();
+    };
+
+    function loadTopArticles() {
+        fetch(`/api/articles/top-10`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch articles');
+                }
+                return response.json();
+            })
+            .then(data => {
+                displayArticles(data);
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function fetchDestinationName(id) {
+        return fetch(`/api/destinations/${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch destination');
+                }
+                return response.json();
+            })
+            .then(data => data.name)
+            .catch(error => {
+                console.error('Error:', error);
+                return 'Unknown';
+            });
+    }
+
+    async function displayArticles(articles) {
+        const articlesContainer = document.getElementById('articles-container');
+        articlesContainer.innerHTML = '';
+
+        for (const article of articles) {
+            const destinationName = await fetchDestinationName(article.destinationId);
+
+            const card = document.createElement('div');
+            card.className = 'article-card';
+            card.innerHTML = `
+                <div class="destination">${destinationName}</div>
+                <h2><a href="javascript:void(0);" onclick="increaseVisitCount(${article.id}); window.open('view-article-comment.html?id=${article.id}', '_blank');">${article.title}</a></h2>
+                <p class="meta">Author: ${article.authorEmail}</p>
+                <p class="meta">Date Created: ${new Date(article.createdAt).toLocaleString()}</p>
+                <p>${article.text.substring(0, 100)}...</p>
+            `;
+            articlesContainer.appendChild(card);
+        }
+    }
+
+    function increaseVisitCount(articleId) {
+        fetch(`/api/articles/article/${articleId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch article');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const newVisitCount = data.visitCount + 1;
+
+                fetch(`/api/articles/article/${articleId}/visit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                    },
+                    body: JSON.stringify({ visitCount: newVisitCount })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to update visit count');
+                        }
+                        window.open(`view-article-comment.html?id=${articleId}`, '_blank');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to update visit count');
+                    });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to fetch article');
+            });
+    }
+
+</script>
+</body>
+</html>

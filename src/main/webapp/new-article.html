@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Article</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+        }
+        header .user-info {
+            display: flex;
+            align-items: center;
+        }
+        header .user-info span {
+            margin-right: 20px;
+        }
+        header .logout-btn {
+            background-color: white;
+            color: #007bff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        header .logout-btn:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+        nav {
+            background-color: #343a40;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        nav li {
+            margin: 0 15px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        form div {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button[disabled] {
+            background-color: #ccc;
+        }
+        button:hover:not([disabled]) {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Travel Guide</h1>
+    <div class="user-info">
+        <span id="user-name"></span>
+        <button class="logout-btn" id="log-out-btn">Log out</button>
+    </div>
+</header>
+
+<nav>
+    <ul id="admin-nav" class="nav-links" style="display: none;">
+        <li><a href="destination.html">Destinations</a></li>
+        <li><a href="user.html">Users</a></li>
+        <li><a href="articles.html">Articles</a></li>
+    </ul>
+    <ul id="user-nav" class="nav-links" style="display: none;">
+        <li><a href="destination.html">Destinations</a></li>
+        <li><a href="articles.html">Articles</a></li>
+    </ul>
+</nav>
+
+<div class="container">
+    <h2>Add New Article</h2>
+    <form id="add-article-form">
+        <div>
+            <label for="title">Title:</label>
+            <input type="text" id="title" name="title" required>
+        </div>
+        <div>
+            <label for="destination">Destination</label>
+            <input type="text" id="destination" name="destination" required readonly>
+        </div>
+        <div>
+            <label for="content">Content:</label>
+            <input type="text" id="content" name="content" required>
+        </div>
+        <div>
+            <label for="activity">Activity:</label>
+            <select id="activity" name="activity" multiple required>
+                <!-- Opcije za aktivnosti -->
+            </select>
+        </div>
+        <div>
+            <label for="new-activity">Add new activity:</label>
+            <input type="text" id="new-activity" name="new-activity">
+            <button type="button" id="add-activity-btn">Add Activity</button>
+        </div>
+        <button type="submit">Add Article</button>
+    </form>
+</div>
+
+<script>
+    let destinationId;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        destinationId = urlParams.get('destinationId');
+        const role = localStorage.getItem('role');
+
+        if (!destinationId) {
+            alert('Destination ID is missing from the URL.');
+            return;
+        }
+
+        if (role === 'admin') {
+            document.getElementById('admin-nav').style.display = 'flex';
+        } else if (role === 'user') {
+            document.getElementById('user-nav').style.display = 'flex';
+        } else {
+            alert('Unauthorized access');
+            window.location.href = 'index.html';
+        }
+
+        loadDestinationName(destinationId);
+        loadActivities(destinationId);
+
+        document.getElementById('add-article-form').addEventListener('submit', handleSubmit);
+
+        document.getElementById('add-activity-btn').addEventListener('click', addActivity);
+
+        document.getElementById('log-out-btn').addEventListener('click', function() {
+            localStorage.removeItem('jwtToken');
+            window.location.href = 'index.html';
+        });
+
+        fetchUserInfo(localStorage.getItem('email'));
+    });
+
+    function fetchUserInfo(email) {
+        fetch(`/api/users/email/${email}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => response.json())
+            .then(user => {
+                document.getElementById('user-name').innerText = `${user.name} ${user.lastname}`;
+                document.getElementById('log-out-btn').style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function loadDestinationName(destinationId) {
+        fetch(`/api/destinations/${destinationId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Failed to fetch destination');
+                }
+            })
+            .then(data => {
+                document.getElementById('destination').value = data.name;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to load destination details');
+            });
+    }
+
+    function loadActivities(destinationId) {
+        fetch(`/api/activity/${destinationId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                const activitySelect = document.getElementById('activity');
+                activitySelect.innerHTML = '';
+                if (data && data.length > 0) {
+                    data.forEach(activity => {
+                        const option = new Option(activity.name, activity.id);
+                        activitySelect.add(option);
+                    });
+                } else {
+                    const option = new Option("No activities available", "");
+                    activitySelect.add(option);
+                    activitySelect.disabled = true;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function addActivity() {
+        const newActivity = document.getElementById('new-activity').value;
+        if (!newActivity) {
+            alert("Please enter an activity name.");
+            return;
+        }
+
+        fetch('/api/activity', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            },
+            body: JSON.stringify({ name: newActivity, destinationId: destinationId })
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Failed to add activity');
+                }
+            })
+            .then(data => {
+                const activitySelect = document.getElementById('activity');
+                const option = new Option(newActivity, data.id);
+                activitySelect.add(option);
+                document.getElementById('new-activity').value = '';
+                activitySelect.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+    }
+
+    function handleSubmit(event) {
+        event.preventDefault();
+
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+        const selectedActivities = Array.from(document.getElementById('activity').selectedOptions).map(option => option.text);
+
+        if (selectedActivities.length === 0) {
+            alert('No activity selected');
+            return;
+        }
+
+        const userEmail = localStorage.getItem('email');
+
+        const articleData = {
+            title: title,
+            destinationId: parseInt(destinationId),
+            text: content,
+            authorEmail: userEmail,
+            visitCount: 0,
+        };
+
+        fetch('/api/articles', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            },
+            body: JSON.stringify(articleData)
+        })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    return response.text().then(text => {
+                        console.error('Response text:', text);
+                        throw new Error(text || 'Failed to add article');
+                    });
+                }
+            })
+            .then(article => {
+                getActivityIds(destinationId, selectedActivities)
+                    .then(activityIds => {
+                        addArticleActivities(article.id, activityIds);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert(error.message);
+                    });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message);
+            });
+    }
+
+    function getActivityIds(destinationId, activityNames) {
+        const requests = activityNames.map(name => {
+            return fetch(`/api/activity/search?destinationId=${destinationId}&name=${encodeURIComponent(name)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error(`Failed to fetch activity ID for ${name}`);
+                    }
+                })
+                .then(data => data.id);
+        });
+
+        return Promise.all(requests);
+    }
+
+    function addArticleActivities(articleId, activityIds) {
+        const requests = activityIds.map(activityId => {
+            return fetch('/api/article_activities', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                },
+                body: JSON.stringify({ articleId: articleId, activityId: activityId })
+            });
+        });
+
+        Promise.all(requests)
+            .then(responses => {
+                if (responses.every(response => response.ok)) {
+                    console.log('All activities added successfully');
+                    window.location.href = `article.html?id=${destinationId}`;
+                } else {
+                    console.error('Failed to add some activities');
+                    alert('Failed to add some activities');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error adding activities');
+            });
+    }
+
+</script>
+
+</body>
+</html>

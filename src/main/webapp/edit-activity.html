@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Activities</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            font-size: 32px;
+            margin-bottom: 40px;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            width: 90%;
+            max-width: 1200px;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .activity-list, .select-activity {
+            flex: 1;
+            margin: 0 20px;
+        }
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .activity-item span {
+            flex: 1;
+        }
+        .activity-item button {
+            background-color: #dc3545;
+            color: #fff;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .activity-item button:hover {
+            background-color: #c82333;
+        }
+        select {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button[disabled] {
+            background-color: #ccc;
+        }
+        button:hover:not([disabled]) {
+            background-color: #218838;
+        }
+        #save-btn {
+            background-color: #007bff;
+            margin-top: 20px;
+            width: 200px;
+            font-size: 18px;
+        }
+        #save-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Edit Activities</h1>
+
+<div class="container">
+    <div class="activity-list">
+        <h2>Selected Activities</h2>
+        <div id="selected-activities">
+            <!-- Selected activities will be dynamically added here -->
+        </div>
+    </div>
+    <div class="select-activity">
+        <h2>Available Activities</h2>
+        <select id="available-activities" multiple>
+            <!-- Available activities will be dynamically added here -->
+        </select>
+        <button id="add-activity-btn">Add Activity</button>
+    </div>
+</div>
+
+<button id="save-btn">Save Changes</button>
+
+<script>
+    let articleId;
+    let destinationId;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        articleId = urlParams.get('id');
+
+        if (!articleId) {
+            alert('Article ID is missing from the URL.');
+            return;
+        }
+
+        fetchArticleDetails(articleId);
+        document.getElementById('add-activity-btn').addEventListener('click', addActivity);
+        document.getElementById('save-btn').addEventListener('click', saveChanges);
+    });
+
+    function fetchArticleDetails(id) {
+        fetch(`/api/articles/article/${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch article');
+                }
+                return response.json();
+            })
+            .then(data => {
+                destinationId = data.destinationId;
+                loadSelectedActivities(id);
+                loadAvailableActivities(destinationId);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to load article details');
+            });
+    }
+
+    function loadSelectedActivities(articleId) {
+        fetch(`/api/article_activities/activity/${articleId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch activity IDs');
+                }
+                return response.json();
+            })
+            .then(activityIds => {
+                const requests = activityIds.map(id =>
+                    fetch(`/api/activity/name/${id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to fetch activity details for ID: ' + id);
+                            }
+                            return response.json();
+                        })
+                );
+
+                return Promise.all(requests);
+            })
+            .then(activityDetails => {
+                const selectedActivities = document.getElementById('selected-activities');
+                selectedActivities.innerHTML = ''; // Clear existing activities
+
+                activityDetails.forEach(activity => {
+                    if (activity.name) {
+                        const div = document.createElement('div');
+                        div.className = 'activity-item';
+                        div.dataset.activityId = activity.id;
+                        div.innerHTML = `
+                        <span>${activity.name}</span>
+                        <button onclick="removeActivity(${activity.id})">Remove</button>
+                    `;
+                        selectedActivities.appendChild(div);
+                    } else {
+                        console.error('Activity name is missing for activity:', activity);
+                    }
+                });
+
+                // Highlight and disable selected activities
+                highlightSelectedActivities();
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function loadAvailableActivities(destinationId) {
+        fetch(`/api/activity/${destinationId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch available activities');
+                }
+                return response.json();
+            })
+            .then(activities => {
+                const availableActivities = document.getElementById('available-activities');
+                availableActivities.innerHTML = ''; // Clear existing options
+
+                activities.forEach(activity => {
+                    const option = new Option(activity.name, activity.id);
+                    availableActivities.add(option);
+                });
+
+                // Highlight and disable selected activities
+                highlightSelectedActivities();
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function highlightSelectedActivities() {
+        const selectedActivityIds = Array.from(document.getElementById('selected-activities').children)
+            .map(div => parseInt(div.dataset.activityId));
+
+        const options = Array.from(document.getElementById('available-activities').options);
+        options.forEach(option => {
+            if (selectedActivityIds.includes(parseInt(option.value))) {
+                option.style.backgroundColor = '#d4edda';
+                option.disabled = true; // Disable option if it is already selected
+            } else {
+                option.style.backgroundColor = '';
+                option.disabled = false; // Enable option if it is not selected
+            }
+        });
+    }
+
+    function addActivity() {
+        const availableActivities = document.getElementById('available-activities');
+        const selectedOptions = Array.from(availableActivities.selectedOptions);
+
+        const selectedActivities = document.getElementById('selected-activities');
+
+        selectedOptions.forEach(option => {
+            if (!option.disabled) { // Check if the option is not disabled
+                const div = document.createElement('div');
+                div.className = 'activity-item';
+                div.dataset.activityId = option.value;
+                div.innerHTML = `
+                    <span>${option.text}</span>
+                    <button onclick="removeActivity(${option.value})">Remove</button>
+                `;
+                selectedActivities.appendChild(div);
+                option.style.backgroundColor = '#d4edda'; // Highlight added activity
+                option.disabled = true; // Disable the option after adding
+            }
+        });
+    }
+
+    function removeActivity(activityId) {
+        const selectedActivities = document.getElementById('selected-activities');
+        const activityDiv = Array.from(selectedActivities.children).find(div => parseInt(div.dataset.activityId) === activityId);
+
+        if (activityDiv) {
+            selectedActivities.removeChild(activityDiv);
+            highlightSelectedActivities();
+        }
+    }
+
+    function saveChanges() {
+        const selectedActivities = Array.from(document.getElementById('selected-activities').children)
+            .map(div => parseInt(div.dataset.activityId));
+
+        if (selectedActivities.length === 0) {
+            alert('No activities selected.');
+            return;
+        }
+
+        // First delete all existing activities for this article
+        fetch(`/api/article_activities/${articleId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to delete existing activities');
+                }
+
+                // Then add all selected activities
+                const requests = selectedActivities.map(activityId =>
+                    fetch(`/api/article_activities`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                        },
+                        body: JSON.stringify({ articleId: articleId, activityId: activityId })
+                    })
+                );
+
+                return Promise.all(requests);
+            })
+            .then(responses => {
+                if (responses.every(response => response.ok)) {
+                    console.log('All activities saved successfully');
+                    alert('Changes saved successfully.');
+                    window.location.href = `edit-article.html?id=${articleId}`;
+                } else {
+                    throw new Error('Failed to save some activities');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving activities');
+            });
+    }
+</script>
+
+</body>
+</html>
