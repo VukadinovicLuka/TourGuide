@@ -49,14 +49,8 @@ git clone https://github.com/VukadinovicLuka/TourGuide.git
 
 
 Database Setup
-# Create a MySQL database
 CREATE DATABASE tourguide_db;
-
-# Set up the database schema with required tables (User, Destination, Article, Activity, Comment)
-# Refer to the schema.sql file in the repository for table definitions
 mysql -u <username> -p tourguide_db < schema.sql
-
-# Create an initial administrator user manually in the database
 INSERT INTO User (username, password, role) VALUES ('admin', SHA2('admin_password', 256), 'ADMIN');
 
 
