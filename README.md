@@ -54,35 +54,32 @@ The **Tourist Guide Platform** offers a robust solution for managing and consumi
 git clone https://github.com/VukadinovicLuka/TourGuide.git
 ```
 
-2. Database Setup
-CREATE DATABASE tourguide_db;
-mysql -u <username> -p tourguide_db < schema.sql
-INSERT INTO User (username, password, role) VALUES ('admin', SHA2('admin_password', 256), 'ADMIN');
-
-
-3. Backend SetupNavigate to the backend directory:
+2. Backend Setup
+   - Navigate to the backend directory:
 ```bash
 cd backend
 ```
 
-4. Configure database connection settings in src/main/resources/config.properties:
-db.url=jdbc:mysql://localhost:3306/tourguide_db
-db.user=<your_mysql_username>
-db.password=<your_mysql_password>
-
-5. Build and deploy the backend:
+3. Build and deploy the backend:
 ```bash
 mvn clean install
 mvn jetty:run
 ```
 
-6. Frontend SetupNavigate to the frontend directory:
+4. Frontend Setup
+   - Navigate to the frontend directory:
 ```bash
 cd frontend
 ```
 
-7. Serve the HTML files through a web server (e.g., Apache, Nginx, or a simple Node.js server).Configure API endpoints in the frontend to match the backend deployment (e.g., update apiBaseUrl in js/config.js to http://localhost:8080/api).
+5. Install dependencies and run the development server.
+```bash
+npm install
+npm run serve
+```
 
+6. Database setup
+  - Setup database schema if applicable.
 
 ## Usage
 
@@ -105,7 +102,7 @@ Read full articles and leave comments to engage with content.
 Discover trending and popular content through the analytics-driven interface.
 
 ## Documentation
-Complete project documentation, including detailed technical requirements and entity specifications, is available in the docs/ directory of the repository or in the project documentation file provided with the course materials.
+Complete project documentation, including detailed technical requirements and entity specifications, is available in the docs/ directory of the repository.
 
 ## Contact
 For questions, feedback, or support, please reach out to luka.zarkovo29@gmail.com.
