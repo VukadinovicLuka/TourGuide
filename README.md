@@ -50,33 +50,36 @@ The **Tourist Guide Platform** provides a complete solution for managing and con
    ```bash
    git clone https://github.com/VukadinovicLuka/TourGuide.git
 
-2. Database Setup:
+2. **Database Setup:**
+```bash
+   Create a MySQL database
+   Set up the database schema with required tables (User, Destination, Article, Activity, Comment)
+   Create initial administrator user manually in the database
+```
 
-Create a MySQL database
-Set up the database schema with required tables (User, Destination, Article, Activity, Comment)
-Create initial administrator user manually in the database
-
-
-3. Backend Setup:
+3. **Backend Setup:**
 
 Navigate to the backend directory:
-bashcd backend
+```bash
+cd backend
+```
 
-Configure database connection settings
+4. **Configure database connection settings**
 Build and deploy the backend:
-bashmvn clean install
+```bash
+mvn clean install
 mvn jetty:run
+```
 
 
-
-4. Frontend Setup:
+4. **Frontend Setup:**
 
 Navigate to the frontend directory and serve the HTML files through a web server
 Configure API endpoints to match your backend deployment
 
 
 
-💡 Usage
+##💡 Usage
 For Administrators:
 
 Access the CMS through the login page
@@ -95,7 +98,7 @@ Browse articles by destination or activity
 Read full articles and engage through comments
 Discover trending and popular content
 
-📚 Documentation
+##📚 Documentation
 The complete project documentation, including detailed technical requirements and entity specifications, is available in the project documentation file provided with the course materials.
-📧 Contact
+##📧 Contact
 For any questions or feedback, please reach out to luka.zarkovo29@gmail.com.
