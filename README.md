@@ -9,43 +9,43 @@ The **Tourist Guide Platform** offers a robust solution for managing and consumi
 ### Key Features
 **Content Management System (CMS)**
 
-Authentication & Authorization: Secure login with role-based access (Content Editor vs. Administrator).
-Destination Management: Create, edit, and manage tourist destinations with detailed descriptions.
-Article Management: Full CRUD (Create, Read, Update, Delete) operations for tourist articles, including activity tagging.
-User Management: Administrator tools to manage system users and their permissions.
-Activity-Based Organization: Categorize articles by tourist activities (e.g., skiing, hiking, swimming).
+-Authentication & Authorization: Secure login with role-based access (Content Editor vs. Administrator).
+-Destination Management: Create, edit, and manage tourist destinations with detailed descriptions.
+-Article Management: Full CRUD (Create, Read, Update, Delete) operations for tourist articles, including activity tagging.
+-User Management: Administrator tools to manage system users and their permissions.
+-Activity-Based Organization: Categorize articles by tourist activities (e.g., skiing, hiking, swimming).
 
 **Public Reading Platform**
 
-Article Discovery: Browse latest articles, popular content, and destination-specific articles.
-Interactive Features: Comment system to foster reader engagement.
-Smart Navigation: Filter articles by destinations or tourist activities.
-Analytics: Track article views and highlight trending content.
-Responsive Design: Optimized for seamless viewing across desktops, tablets, and mobile devices.
+-Article Discovery: Browse latest articles, popular content, and destination-specific articles.
+-Interactive Features: Comment system to foster reader engagement.
+-Smart Navigation: Filter articles by destinations or tourist activities.
+-Analytics: Track article views and highlight trending content.
+-Responsive Design: Optimized for seamless viewing across desktops, tablets, and mobile devices.
 
 **Additional Features**
 
-Data Validation: Comprehensive input validation and error handling for robust functionality.
-Pagination: Efficient content browsing with paginated results.
-Security: Password hashing with SHA-256 and secure session management.
-Relational Database: Persistent data storage with well-defined entity relationships.
+-Data Validation: Comprehensive input validation and error handling for robust functionality.
+-Pagination: Efficient content browsing with paginated results.
+-Security: Password hashing with SHA-256 and secure session management.
+-Relational Database: Persistent data storage with well-defined entity relationships.
 
 ### Technologies Used
 
-**Frontend**: HTML, CSS, JavaScript
-**Backend**: JAX-RS (Java REST API framework)
-**Database**: MySQL (relational database)
-**Security**: SHA-256 password hashing
-**Authentication**: Cookie-based or JWT session management
+-**Frontend**: HTML, CSS, JavaScript
+-**Backend**: JAX-RS (Java REST API framework)
+-**Database**: MySQL (relational database)
+-**Security**: SHA-256 password hashing
+-**Authentication**: Cookie-based or JWT session management
 
 ## Getting Started
 
 ### Prerequisites
 
-Java 8 or higher (required for JAX-RS backend)
-MySQL database server
-Web server (e.g., Apache Tomcat or similar)
-Modern web browser (e.g., Chrome, Firefox, Edge)
+-Java 8 or higher (required for JAX-RS backend)
+-MySQL database server
+-Web server (e.g., Apache Tomcat or similar)
+-Modern web browser (e.g., Chrome, Firefox, Edge)
 
 ### Installation
 
