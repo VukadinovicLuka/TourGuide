@@ -36,6 +36,4 @@ public class ActivityService {
     public boolean deleteActivitiesByDestination(int destinationId) {
         return activityRepository.deleteByDestinationId(destinationId);
     }
-
-
 }

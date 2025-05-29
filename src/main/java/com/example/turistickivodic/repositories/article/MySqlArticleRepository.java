@@ -171,10 +171,11 @@ public class MySqlArticleRepository extends MySqlAbstractRepository implements A
     @Override
     public List<Article> findTop10ByCreatedAtAfterOrderByVisitCountDesc(LocalDate createdAt) {
         List<Article> articles = new ArrayList<>();
-        String query = "SELECT * FROM articles WHERE created_at > ? ORDER BY visit_count DESC LIMIT 10";
+        // Remove date filter temporarily
+        String query = "SELECT * FROM articles ORDER BY visit_count DESC LIMIT 10";
         try (Connection connection = this.newConnection();
              PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setDate(1, java.sql.Date.valueOf(createdAt));
+            // Remove the date parameter
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     Article article = new Article();
