@@ -52,34 +52,36 @@ The **Tourist Guide Platform** offers a robust solution for managing and consumi
 1. Clone the Repository
 ```bash
 git clone https://github.com/VukadinovicLuka/TourGuide.git
+cd TourGuide
 ```
 
-2. Backend Setup
-   - Navigate to the backend directory:
-```bash
-cd backend
-```
+2. Database Setup
+   - Access MySQL command line:
+  ```bash
+     mysql -u root -p
+  ```
+   - Create the database:
+  ```sql
+     CREATE DATABASE vodic_schema;
+     exit;
+  ```
+     
+3. Configure Database Connection
+   - Update src/main/resources/META-INF/persistence.xml
+   - Replace YOUR_MYSQL_ROOT_PASSWORD with your actual MySQL password:
+  ```xml
+     <property name="javax.persistence.jdbc.password" value="YOUR_MYSQL_ROOT_PASSWORD" />
+  ```
 
-3. Build and deploy the backend:
-```bash
-mvn clean install
-mvn jetty:run
-```
+4. Build and Run the Application
+  ```bash
+  mvn clean compile
+  mvn jetty:run
+   ```
 
-4. Frontend Setup
-   - Navigate to the frontend directory:
-```bash
-cd frontend
-```
-
-5. Install dependencies and run the development server.
-```bash
-npm install
-npm run serve
-```
-
-6. Database setup
-  - Setup database schema if applicable.
+6. Access the Application:
+   - Open the browser and navigate to:
+  http://localhost:8080
 
 ## Usage
 
